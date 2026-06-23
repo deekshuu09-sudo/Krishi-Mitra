@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import en from "./locales/en.json";
 import te from "./locales/te.json";
 import hi from "./locales/hi.json";
@@ -9,80 +9,41 @@ const translations = {
   hindi: hi,
 };
 
-const I18nContext = createContext(null);
+const I18nContext = createContext();
 
-export function I18nProvider({ children }) {
-  const [language, setLanguage] = useState(() => {
-    try {
-      const saved = localStorage.getItem("krishi_mitra_lang");
-      if (saved && translations[saved]) {
-        return saved;
-      }
-    } catch (e) {
-      console.warn("localStorage is not available:", e);
-    }
-    return "english";
-  });
-
-  const [isMounted, setIsMounted] = useState(false);
+export const I18nProvider = ({ children }) => {
+  const [language, setLanguage] = useState("english");
 
   useEffect(() => {
-    setIsMounted(true);
+    const saved = localStorage.getItem("krishi_mitra_lang");
+    if (saved && translations[saved]) {
+      setLanguage(saved);
+    }
   }, []);
 
-  const changeLanguage = (newLang) => {
-    if (translations[newLang]) {
-      setLanguage(newLang);
-      try {
-        localStorage.setItem("krishi_mitra_lang", newLang);
-      } catch (e) {
-        console.warn("Failed to save language in localStorage:", e);
-      }
-    }
+  const changeLanguage = (lang) => {
+    setLanguage(lang);
+    localStorage.setItem("krishi_mitra_lang", lang);
   };
 
-  const getNestedValue = (obj, path) => {
-    if (!obj || !path) return null;
-    return path.split(".").reduce((acc, part) => {
-      return acc && acc[part] !== undefined ? acc[part] : null;
-    }, obj);
-  };
+  const t = (key) => {
+    const keys = key.split(".");
+    let value = translations[language];
 
-  const t = (key, variables = {}) => {
-    let value = getNestedValue(translations[language], key);
-
-    // Fallback to English
-    if (value === null && language !== "english") {
-      value = getNestedValue(translations.english, key);
+    for (const k of keys) {
+      value = value?.[k];
     }
 
-    // Fallback to raw key
-    if (value === null || value === undefined) {
-      return key;
-    }
-
-    // Replace variables
-    return Object.entries(variables).reduce((acc, [varName, varVal]) => {
-      return acc.replace(new RegExp(`\\{${varName}\\}`, "g"), String(varVal));
-    }, value);
+    return value || key;
   };
-
-  if (!isMounted) {
-    // Return placeholder during hydration/first load to avoid flash
-    return <>{children}</>;
-  }
 
   return (
-    <I18nContext.Provider value={{ t, language, changeLanguage }}>
+    <I18nContext.Provider
+      value={{ language, changeLanguage, t }}
+    >
       {children}
     </I18nContext.Provider>
   );
-}
+};
 
-export function useTranslation() {
-  const context = useContext(I18nContext);
-  if (!context) {
-    throw new Error("useTranslation must be used within an I18nProvider");
-  }
-  return context;
-}
+export const useTranslation = () => useContext(I18nContext);
