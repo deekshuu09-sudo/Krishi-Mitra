@@ -17,7 +17,7 @@ If you are developing a production application, we recommend using TypeScript wi
 
 ## Deployment
 
-- **Preview (new):** https://krishi-mitra-rl754tvwa-deekshitha-roy-s-projects.vercel.app
+- **Preview (new):** https://krishi-mitra-csp.vercel.app
 - **Alias (existing):** https://krishi-mitra-eta.vercel.app
 - **Branch:** `batch8-csp-deploy`
 
